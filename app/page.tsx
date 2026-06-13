@@ -52,12 +52,18 @@ export default function HomePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ urlAsli }),
       });
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      let data: { redirectPath?: string; error?: string } = {};
+
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      }
+
       if (response.ok) {
-        setRedirectUrl(data.redirectPath);
+        setRedirectUrl(data.redirectPath || '');
         setMessage('Link berhasil dibuat. Salin URL di bawah.');
       } else {
-        setMessage(data.error || 'Terjadi kesalahan saat membuat link');
+        setMessage(data.error || `Terjadi kesalahan saat membuat link (${response.status})`);
       }
     } catch (error) {
       console.error(error);

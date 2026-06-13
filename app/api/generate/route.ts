@@ -20,20 +20,26 @@ async function generateUniqueSlug() {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const { urlAsli } = body;
+  try {
+    const body = await request.json();
+    const { urlAsli } = body;
 
-  if (!urlAsli || typeof urlAsli !== 'string') {
-    return NextResponse.json({ error: 'urlAsli is required' }, { status: 400 });
+    if (!urlAsli || typeof urlAsli !== 'string' || !urlAsli.trim()) {
+      return NextResponse.json({ error: 'urlAsli is required' }, { status: 400 });
+    }
+
+    const slug = await generateUniqueSlug();
+    const link = await prisma.link.create({
+      data: {
+        id: slug,
+        urlAsli,
+      },
+    });
+
+    return NextResponse.json({ redirectPath: `/r/${link.id}` });
+  } catch (error) {
+    console.error('Generate link error:', error);
+    const message = error instanceof Error ? error.message : 'Unknown server error';
+    return NextResponse.json({ error: `Server error: ${message}` }, { status: 500 });
   }
-
-  const slug = await generateUniqueSlug();
-  const link = await prisma.link.create({
-    data: {
-      id: slug,
-      urlAsli,
-    },
-  });
-
-  return NextResponse.json({ redirectPath: `/r/${link.id}` });
 }
